@@ -85,6 +85,12 @@ function pushNetSvg(svg, nodes) {
     pos_map[node.id] = node.interval;
     cursor++;
     
+    if (node.after) {
+      for (var j = 0; j < node.after.length; j++) {
+        layoutNode(node.after[j]);
+      }
+    }
+    
     node.broad_interval = [start, cursor];
   }
 
@@ -111,11 +117,11 @@ function pushNetSvg(svg, nodes) {
       if (node.type !== 'link') {
           var t0 = node.interval[0];
           var t1 = node.interval[1];
-          svg.appendChild(createLabelSvg(-t1 - 1, t0 + 0.5, node.type));
+          svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.type));
       }
     }
 
-    // Draw Children
+    // Draw Children (Before)
     if (node.before) {
       for (var j = 0; j < node.before.length; j++) {
         var child = node.before[j];
@@ -130,6 +136,15 @@ function pushNetSvg(svg, nodes) {
             svg.appendChild(createNodeSvg(-link_mid, target_mid, r));
           }
         }
+      }
+    }
+    
+    // Draw Children (After)
+    if (node.after) {
+      for (var j = 0; j < node.after.length; j++) {
+        var child = node.after[j];
+        renderNode(child);
+        // Usually output ports don't link *out* via 'link' property in this model
       }
     }
   }
@@ -232,6 +247,7 @@ function proofToNodes(proof) {
       blockId: blockId,
       type: type,
       before: [],
+      after: [],
       portNodes: {}, // Inputs
       outPortNodes: {} // Outputs
     };
@@ -245,14 +261,10 @@ function proofToNodes(proof) {
         var outNode = {
             id: nextId++,
             type: portName,
-            before: [{
-                type: 'link',
-                link: blockNode.id,
-                interval: [], broad_interval: [] // helper for pushNetSvg
-            }]
+            before: []
         };
-        // Add to top-level nodes so they are laid out
-        nodes.push(outNode);
+        // Add to 'after' list
+        blockNode.after.push(outNode);
         blockNode.outPortNodes[portName] = outNode;
     });
 
