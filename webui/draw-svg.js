@@ -99,25 +99,13 @@ function pushNetSvg(svg, nodes) {
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
 
-    // Draw Broad Interval as L-shape
-    if (node.broad_interval) {
-      svg.appendChild(
-        createBandSvg(node.broad_interval, node.type === 'link' ? '#555' : '#00d2ff')
-      );
-      
-      // Draw Label for Node
-      // Place at the corner of the L-shape or center of vertical span
-      if (node.type !== 'link') {
-          var t0 = node.interval[0];
-          var t1 = node.interval[1];
-          svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.type));
-      }
-    }
-
     // Draw Links
     if (node.before) {
       for (var j = 0; j < node.before.length; j++) {
         var link_node = node.before[j];
+        svg.appendChild(
+            createBandSvg(link_node.interval, link_node.type === 'link' ? '#555' : '#00d2ff')
+        );
         var link_mid = (link_node.interval[0] + link_node.interval[1]) / 2;
 
         if (link_node.link) {
@@ -127,6 +115,24 @@ function pushNetSvg(svg, nodes) {
             svg.appendChild(createNodeSvg(-link_mid, target_mid, r));
           }
         }
+      }
+    }
+
+    // Draw Broad Interval as L-shape
+    if (node.broad_interval) {
+      svg.appendChild(
+          createBandSvg(node.broad_interval, node.type === 'link' ? '#555' : '#00d2ff')
+      );
+      svg.appendChild(
+          createBandSvg(node.interval, node.type === 'link' ? '#555' : '#00d2ff')
+      );
+
+      // Draw Label for Node
+      // Place at the corner of the L-shape or center of vertical span
+      if (node.type !== 'link') {
+        var t0 = node.interval[0];
+        var t1 = node.interval[1];
+        svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.type));
       }
     }
   }
