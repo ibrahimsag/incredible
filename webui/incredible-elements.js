@@ -167,6 +167,34 @@ joint.shapes.incredible.Link = joint.dia.Link.extend({
 
         type: 'incredible.Link',
 
+        labels: [{
+            position: 0.5,
+            attrs: {
+                text: {
+                    text: ' ', // placeholder text
+                    fill: '#000000',
+                    'font-family': 'sans-serif',
+                    'font-size': 14
+                },
+                rect: {
+                    ref: 'text',
+                    ref_x: '-5',  // x-offset from text (left padding)
+                    ref_y: '-5',  // y-offset from text (top padding)
+                    ref_width: '100%',
+                    ref_height: '100%',
+                    x: 0,
+                    y: 0,
+                    width: 10,  // total width includes 5px left/right padding + text width
+                    height: 10, // total height includes 5px top/bottom padding + text height
+                    rx: 3,
+                    ry: 3,
+                    fill: '#f6f6f6',
+                    stroke: '#c0c0c0',
+                    'stroke-width': 1
+                }
+            }
+        }],
+
         attrs: {
             '.connection': { 'stroke-width': 2 },
             '.marker-vertex': { r: 7 }

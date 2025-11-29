@@ -89,3 +89,6 @@ body.dark-mode .symboltable {
 body.dark-mode .symboltable th {
     border-right-color: #555;
 }
+body.dark-mode .port-label { fill: #eee; }
+body.dark-mode .link .label rect { fill: #333; stroke: #666; } body.dark-mode .link .label text { fill: #eee; }
+body.dark-mode .customtaskentry button { background-color: #4a90e2; } body.dark-mode .customtaskentry button:hover { background-color: #357abd; } body.dark-mode .customtaskentry textarea { background-color: #444; color: #eee; border: 1px solid #666; }
