@@ -59,13 +59,36 @@ function points_band(interval) {
 
 function createLinkSvg(interval, color) {
   var group = se('g', {});
-
+  
   let [points, inv] = points_band(interval);
   group.appendChild(createPathSvg(points, color));
 
+  // Arrowhead at points[1] (the corner)
+  var p1 = points[1]; 
+  var p2 = points[2]; // The end of the segment from p1
+  
+  var cx = p1[0] * 10;
+  var cy = p1[1] * 10;
+  var sz = 2; // Size of arrow
+
+  var arrowPath = [
+    [cx - sz, cy - sz],
+    inv ? [cx + sz, cy - sz] : [cx - sz, cy + sz],
+    [cx + sz, cy + sz],
+  ];
+  var d = arrowPath.map(function(p, i) {
+    return (i === 0 ? 'M' : 'L') + " " + (p[0]) + " " + (p[1]);
+  }).join(' ') + ' Z';
+
+  group.appendChild(se('path', {
+    d: d,
+    'stroke-width': 0.2,
+    fill: '#555',
+    stroke: '#777',
+  }));
+  
   return group;
 }
-
 function createBandSvg(interval, color) {
   let [points, _] = points_band(interval);
   return createPathSvg(points, color);
@@ -154,7 +177,7 @@ function pushNetSvg(svg, nodes) {
       var target_interval = pos_map[node.link];
       if (target_interval) {
         var target_mid = (target_interval[0] + target_interval[1]) / 2;
-        svg.appendChild(createLinkSvg([link_mid, target_mid], node.type === 'link' ? '#555' : '#00d2ff'));
+        svg.appendChild(createLinkSvg([target_mid, link_mid], node.type === 'link' ? '#555' : '#00d2ff'));
       }
     }
   }
