@@ -15,17 +15,6 @@ function se(tagName, attrs) {
   return el;
 }
 
-function createNodeSvg(cx, cy, r) {
-  r = r || 3;
-  return se('circle', {
-    cx: cx * 10,
-    cy: cy * 10,
-    r: r,
-    fill: '#00d2ff', // Cyan-ish
-    'stroke-width': 1,
-  });
-}
-
 function createPathSvg(points, stroke) {
   stroke = stroke || '#00d2ff';
   var d = points.map(function(p, i) {
@@ -54,14 +43,31 @@ function createLabelSvg(cx, cy, text) {
   return el;
 }
 
-function createBandSvg(interval, color) {
+function points_band(interval) {
   var t0 = interval[0];
   var t1 = interval[1];
+  let inv = t0 > t1;
+
   var points = [
     [-t0, t0],
-    [-t1, t0],
+    inv ? [-t0, t1] : [-t1, t0],
     [-t1, t1]
   ];
+
+  return [points, inv];
+}
+
+function createLinkSvg(interval, color) {
+  var group = se('g', {});
+
+  let [points, inv] = points_band(interval);
+  group.appendChild(createPathSvg(points, color));
+
+  return group;
+}
+
+function createBandSvg(interval, color) {
+  let [points, _] = points_band(interval);
   return createPathSvg(points, color);
 }
 
@@ -148,7 +154,7 @@ function pushNetSvg(svg, nodes) {
       var target_interval = pos_map[node.link];
       if (target_interval) {
         var target_mid = (target_interval[0] + target_interval[1]) / 2;
-        svg.appendChild(createNodeSvg(-link_mid, target_mid, r));
+        svg.appendChild(createLinkSvg([link_mid, target_mid], node.type === 'link' ? '#555' : '#00d2ff'));
       }
     }
   }
