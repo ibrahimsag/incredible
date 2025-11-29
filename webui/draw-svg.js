@@ -39,6 +39,21 @@ function createPathSvg(points, stroke) {
   });
 }
 
+function createLabelSvg(cx, cy, text) {
+  var el = se('text', {
+    x: cx * 10,
+    y: cy * 10,
+    'font-size': 6,
+    fill: '#fff',
+    'font-family': 'sans-serif',
+    'pointer-events': 'none',
+    'text-anchor': 'start',
+    'alignment-baseline': 'hanging',
+  });
+  el.textContent = text;
+  return el;
+}
+
 function pushNetSvg(svg, nodes) {
   var r = 2;
   var pos_map = {}; // Maps ID to Interval
@@ -87,6 +102,14 @@ function pushNetSvg(svg, nodes) {
           node.type === 'link' ? '#555' : '#00d2ff'
         )
       );
+
+      // Draw Label for Node
+      // Place at the corner of the L-shape or center of vertical span
+      if (node.type !== 'link') {
+        var t0 = node.interval[0];
+        var t1 = node.interval[1];
+          svg.appendChild(createLabelSvg(-t1 + 0.2,  t0 + 0.2, node.type));
+      }
     }
 
     // Draw Links
