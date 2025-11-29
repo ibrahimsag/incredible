@@ -34,7 +34,7 @@ function createPathSvg(points, stroke) {
   return se('path', {
     d: d,
     stroke: stroke,
-    'stroke-width': 1,
+    'stroke-width': 0.3,
     fill: 'none',
   });
 }
@@ -73,24 +73,28 @@ function pushNetSvg(svg, nodes) {
   // Helper for Layout
   function layoutNode(node) {
     var start = cursor;
-    
-    if (node.before) {
+
+    if (node.before && node.before.length > 0) {
+      cursor += 0.1;
       for (var j = 0; j < node.before.length; j++) {
         layoutNode(node.before[j]);
       }
+      cursor += 0.1;
     }
-    
+
     node.interval = [cursor, cursor + 1];
     // Handle non-numeric IDs if necessary, though proofToNodes uses ints
     pos_map[node.id] = node.interval;
-    cursor++;
-    
-    if (node.after) {
+    cursor += 1.0;
+
+    if (node.after && node.after.length > 0) {
+      cursor += 0.1;
       for (var j = 0; j < node.after.length; j++) {
         layoutNode(node.after[j]);
       }
+      cursor += 0.1;
     }
-    
+
     node.broad_interval = [start, cursor];
   }
 
@@ -123,28 +127,28 @@ function pushNetSvg(svg, nodes) {
 
     // Draw Children (Before)
     if (node.before) {
-      for (var j = 0; j < node.before.length; j++) {
-        var child = node.before[j];
+      for (let j = 0; j < node.before.length; j++) {
+        let child = node.before[j];
         renderNode(child);
-
-        // Draw Link Connection if applicable
-        if (child.link) {
-          var link_mid = (child.interval[0] + child.interval[1]) / 2;
-          var target_interval = pos_map[child.link];
-          if (target_interval) {
-            var target_mid = (target_interval[0] + target_interval[1]) / 2;
-            svg.appendChild(createNodeSvg(-link_mid, target_mid, r));
-          }
-        }
       }
     }
     
     // Draw Children (After)
     if (node.after) {
-      for (var j = 0; j < node.after.length; j++) {
-        var child = node.after[j];
+      for (let j = 0; j < node.after.length; j++) {
+        let child = node.after[j];
         renderNode(child);
         // Usually output ports don't link *out* via 'link' property in this model
+      }
+    }
+
+    // Draw Link Connection if applicable
+    if (node.link) {
+      var link_mid = (node.interval[0] + node.interval[1]) / 2;
+      var target_interval = pos_map[node.link];
+      if (target_interval) {
+        var target_mid = (target_interval[0] + target_interval[1]) / 2;
+        svg.appendChild(createNodeSvg(-link_mid, target_mid, r));
       }
     }
   }
