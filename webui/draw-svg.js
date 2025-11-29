@@ -69,7 +69,7 @@ function createLinkSvg(interval, color) {
   
   var cx = p1[0] * 10;
   var cy = p1[1] * 10;
-  var sz = 2; // Size of arrow
+  var sz = 1.5; // Size of arrow
 
   var arrowPath = [
     [cx - sz, cy - sz],
@@ -82,9 +82,9 @@ function createLinkSvg(interval, color) {
 
   group.appendChild(se('path', {
     d: d,
-    'stroke-width': 0.2,
+    'stroke-width': 0.3,
     fill: '#555',
-    stroke: '#777',
+    stroke: '#999',
   }));
   
   return group;
