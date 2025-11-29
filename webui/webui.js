@@ -302,6 +302,23 @@ $(function (){
     $("#help").hide();
   });
 
+  // Theme toggle logic
+  if (localStorage.getItem("theme") === "dark") {
+    $("body").addClass("dark-mode");
+    $("#theme-toggle").text("☀");
+  }
+
+  $("#theme-toggle").click(function() {
+    $("body").toggleClass("dark-mode");
+    if ($("body").hasClass("dark-mode")) {
+      localStorage.setItem("theme", "dark");
+      $(this).text("☀");
+    } else {
+      localStorage.setItem("theme", "light");
+      $(this).text("☾");
+    }
+  });
+
   $("#closedialog").click(function(){
     $("#dialog").hide();
   });

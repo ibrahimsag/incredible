@@ -1,0 +1,91 @@
+body.dark-mode {
+    background-color: #222;
+    color: #eee;
+}
+
+body.dark-mode #header {
+    border-bottom-color: #555;
+}
+
+body.dark-mode #leftpane {
+    border-right-color: #555;
+}
+
+body.dark-mode #taskbottombar {
+    border-top-color: #555;
+    background-color: #333;
+    color: #eee;
+}
+
+body.dark-mode #taskbottombar:hover {
+    background-color: #444;
+}
+
+body.dark-mode #dialog,
+body.dark-mode #help,
+body.dark-mode #taskdialog {
+    background-color: #333;
+    border-color: #555;
+    color: #eee;
+}
+
+body.dark-mode #taskdialog .inferencerule {
+    border-color: #555;
+    background-color: #444; 
+    color: #eee;
+}
+
+body.dark-mode #taskdialog .inferencerule:hover {
+    border-color: #888;
+}
+
+body.dark-mode button.iconic {
+    background-color: #555;
+    color: #eee;
+}
+
+body.dark-mode button.iconic:hover {
+    background-color: #777;
+}
+
+/* Graph elements overrides */
+body.dark-mode .block .body {
+    fill: #444;
+    stroke: #777;
+}
+
+body.dark-mode .block .label {
+    fill: #eee;
+}
+
+body.dark-mode .block:hover .body {
+    fill: #555;
+}
+
+body.dark-mode .connection {
+    stroke: #aaa;
+}
+
+body.dark-mode .connection-wrap:hover {
+    stroke: #ccc;
+}
+
+body.dark-mode .port-body[magnet=true]:hover {
+    fill: #fff;
+}
+
+body.dark-mode .block .number {
+    fill: #ccc;
+}
+
+/* Inverted icons for dark mode if they are black by default */
+/* Assuming icons are text or simple shapes, color change usually works. 
+   If they are images, filter: invert(1) might be needed. */
+   
+body.dark-mode .symboltable {
+    border-color: #555;
+}
+
+body.dark-mode .symboltable th {
+    border-right-color: #555;
+}
