@@ -185,18 +185,42 @@ function createDebugSvg(nodes) {
 
 function proofToNodes(proof) {
   var nodes = [];
-  $.each(proof.blocks, function(id, block) {
+  var blockToNodeMap = {};
+  var nextId = 1;
+
+  // First, assign internal IDs to all blocks and create basic Node objects
+  $.each(proof.blocks, function(blockId, block) {
     var type = block.rule || block.assumption || block.conclusion || block.annotation || "unknown";
-    // If type is an object (e.g. assumption/conclusion/annotation might be string or formatted string), ensure string
-    if (typeof type !== 'string') {
-        type = JSON.stringify(type);
-    }
-    nodes.push({
-      id: id,
+    if (typeof type !== 'string') type = JSON.stringify(type);
+    
+    var node = {
+      id: nextId++,
+      blockId: blockId,
       type: type,
-      before: [] // Ignore connections for now
-    });
+      before: []
+    };
+    blockToNodeMap[blockId] = node;
+    nodes.push(node);
   });
+
+  // Process connections to populate 'before'
+  if (proof.connections) {
+      $.each(proof.connections, function(connId, conn) {
+        var targetNode = blockToNodeMap[conn.to.block];
+        var sourceNode = blockToNodeMap[conn.from.block];
+
+        if (targetNode && sourceNode) {
+          var linkNode = {
+            id: nextId++,
+            type: 'link',
+            link: sourceNode.id,
+            port: conn.to.port
+          };
+          targetNode.before.push(linkNode);
+        }
+      });
+  }
+
   return nodes;
 }
 
