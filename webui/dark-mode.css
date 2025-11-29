@@ -93,3 +93,4 @@ body.dark-mode .port-label { fill: #eee; }
 body.dark-mode .link .label rect { fill: #333; stroke: #666; } body.dark-mode .link .label text { fill: #eee; }
 body.dark-mode .customtaskentry button { background-color: #4a90e2; } body.dark-mode .customtaskentry button:hover { background-color: #357abd; } body.dark-mode .customtaskentry textarea { background-color: #444; color: #eee; border: 1px solid #666; }
 body.dark-mode #taskdialog .inferencerule.attempted { background-color: #665c3b; } body.dark-mode #taskdialog .inferencerule.solved { background-color: #2d5a2d; }
+body.dark-mode .connection.error { stroke: #E74C3C; } body.dark-mode .block .port-body[fill='#F00'] { fill: #E74C3C; }
