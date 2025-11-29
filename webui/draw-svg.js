@@ -54,6 +54,17 @@ function createLabelSvg(cx, cy, text) {
   return el;
 }
 
+function createBandSvg(interval, color) {
+  var t0 = interval[0];
+  var t1 = interval[1];
+  var points = [
+    [-t0, t0],
+    [-t1, t0],
+    [-t1, t1]
+  ];
+  return createPathSvg(points, color);
+}
+
 function pushNetSvg(svg, nodes) {
   var r = 2;
   var pos_map = {}; // Maps ID to Interval
@@ -90,25 +101,16 @@ function pushNetSvg(svg, nodes) {
 
     // Draw Broad Interval as L-shape
     if (node.broad_interval) {
-      var t0 = node.broad_interval[0];
-      var t1 = node.broad_interval[1];
       svg.appendChild(
-        createPathSvg(
-          [
-            [-t0, t0],
-            [-t1, t0],
-            [-t1, t1],
-          ],
-          node.type === 'link' ? '#555' : '#00d2ff'
-        )
+        createBandSvg(node.broad_interval, node.type === 'link' ? '#555' : '#00d2ff')
       );
-
+      
       // Draw Label for Node
       // Place at the corner of the L-shape or center of vertical span
       if (node.type !== 'link') {
-        var t0 = node.interval[0];
-        var t1 = node.interval[1];
-          svg.appendChild(createLabelSvg(-t1 + 0.2,  t0 + 0.2, node.type));
+          var t0 = node.interval[0];
+          var t1 = node.interval[1];
+          svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.type));
       }
     }
 
