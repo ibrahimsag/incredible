@@ -183,40 +183,107 @@ function createDebugSvg(nodes) {
   return svg;
 }
 
+function getBlockPorts(block) {
+  var inputs = [];
+  var outputs = [];
+  
+  if (block.rule) {
+      var rule = current_logic().rules.find(function(r) { return r.id === block.rule; });
+      if (rule) {
+          $.each(rule.ports, function(name, port) {
+              // Logic gates: assumptions are inputs, conclusions are outputs
+              // In standard rules: 
+              // 'assumption' ports are inputs.
+              // 'conclusion' ports are outputs.
+              // 'local hypothesis' ports are outputs (they provide a hypothesis).
+              
+              if (port.type === 'assumption') inputs.push(name);
+              else outputs.push(name);
+          });
+      }
+  } else if (block.assumption) {
+      outputs.push('out');
+  } else if (block.conclusion) {
+      inputs.push('in');
+  } else if (block.annotation) {
+      inputs.push('in');
+      outputs.push('out');
+  }
+  
+  return { inputs: inputs, outputs: outputs };
+}
+
 function proofToNodes(proof) {
   var nodes = [];
   var blockToNodeMap = {};
   var nextId = 1;
 
-  // First, assign internal IDs to all blocks and create basic Node objects
+  // 1. Create Block Nodes and Output Port Nodes
   $.each(proof.blocks, function(blockId, block) {
     var type = block.rule || block.assumption || block.conclusion || block.annotation || "unknown";
     if (typeof type !== 'string') type = JSON.stringify(type);
     
-    var node = {
+    var blockNode = {
       id: nextId++,
       blockId: blockId,
       type: type,
-      before: []
+      before: [],
+      portNodes: {}, // Inputs
+      outPortNodes: {} // Outputs
     };
-    blockToNodeMap[blockId] = node;
-    nodes.push(node);
+    blockToNodeMap[blockId] = blockNode;
+    nodes.push(blockNode);
+    
+    var ports = getBlockPorts(block);
+    
+    // Create explicit nodes for Output Ports
+    $.each(ports.outputs, function(i, portName) {
+        var outNode = {
+            id: nextId++,
+            type: portName,
+            before: [{
+                type: 'link',
+                link: blockNode.id,
+                interval: [], broad_interval: [] // helper for pushNetSvg
+            }]
+        };
+        // Add to top-level nodes so they are laid out
+        nodes.push(outNode);
+        blockNode.outPortNodes[portName] = outNode;
+    });
+
+    // Create explicit nodes for Input Ports (inline in Block)
+    $.each(ports.inputs, function(i, portName) {
+        var portNode = {
+            id: nextId++,
+            type: portName,
+            before: [] 
+        };
+        blockNode.before.push(portNode);
+        blockNode.portNodes[portName] = portNode;
+    });
   });
 
-  // Process connections to populate 'before'
+  // 2. Process connections
   if (proof.connections) {
       $.each(proof.connections, function(connId, conn) {
         var targetNode = blockToNodeMap[conn.to.block];
         var sourceNode = blockToNodeMap[conn.from.block];
 
         if (targetNode && sourceNode) {
+          var targetPortNode = targetNode.portNodes[conn.to.port];
+          var sourcePortNode = sourceNode.outPortNodes[conn.from.port];
+          
+          var targetBefore = targetPortNode ? targetPortNode.before : targetNode.before;
+          var linkId = sourcePortNode ? sourcePortNode.id : sourceNode.id;
+
           var linkNode = {
             id: nextId++,
             type: 'link',
-            link: sourceNode.id,
+            link: linkId,
             port: conn.to.port
           };
-          targetNode.before.push(linkNode);
+          targetBefore.push(linkNode);
         }
       });
   }
