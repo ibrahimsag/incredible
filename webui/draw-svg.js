@@ -70,46 +70,61 @@ function pushNetSvg(svg, nodes) {
   var pos_map = {}; // Maps ID to Interval
   var cursor = 0;
 
-  // Layout Pass
-  for (var i = 0; i < nodes.length; i++) {
-    var node = nodes[i];
+  // Helper for Layout
+  function layoutNode(node) {
     var start = cursor;
-
+    
     if (node.before) {
       for (var j = 0; j < node.before.length; j++) {
-        var link_node = node.before[j];
-        // Link gets a unit interval
-        link_node.interval = [cursor, cursor + 1];
-        link_node.broad_interval = [cursor, cursor + 1];
-        pos_map[link_node.id] = link_node.interval;
-        cursor++;
+        layoutNode(node.before[j]);
       }
     }
-
-    // Node gets a unit interval
+    
     node.interval = [cursor, cursor + 1];
+    // Handle non-numeric IDs if necessary, though proofToNodes uses ints
     pos_map[node.id] = node.interval;
     cursor++;
-
-    // Broad interval covers from start of inputs (or self) to end of self
+    
     node.broad_interval = [start, cursor];
   }
 
-  // Render Pass
+  // Layout Pass
   for (var i = 0; i < nodes.length; i++) {
-    var node = nodes[i];
+    layoutNode(nodes[i]);
+  }
 
-    // Draw Links
+  // Helper for Render
+  function renderNode(node) {
+    // Draw Node Body (L-shape)
+    if (node.broad_interval) {
+      svg.appendChild(
+        createBandSvg(node.broad_interval, node.type === 'link' ? '#555' : '#00d2ff')
+      );
+      
+      if (node.interval) {
+          svg.appendChild(
+            createBandSvg(node.interval, node.type === 'link' ? '#555' : '#00d2ff')
+          );
+      }
+
+      // Draw Label
+      if (node.type !== 'link') {
+          var t0 = node.interval[0];
+          var t1 = node.interval[1];
+          svg.appendChild(createLabelSvg(-t1 - 1, t0 + 0.5, node.type));
+      }
+    }
+
+    // Draw Children
     if (node.before) {
       for (var j = 0; j < node.before.length; j++) {
-        var link_node = node.before[j];
-        svg.appendChild(
-            createBandSvg(link_node.interval, link_node.type === 'link' ? '#555' : '#00d2ff')
-        );
-        var link_mid = (link_node.interval[0] + link_node.interval[1]) / 2;
+        var child = node.before[j];
+        renderNode(child);
 
-        if (link_node.link) {
-          var target_interval = pos_map[link_node.link];
+        // Draw Link Connection if applicable
+        if (child.link) {
+          var link_mid = (child.interval[0] + child.interval[1]) / 2;
+          var target_interval = pos_map[child.link];
           if (target_interval) {
             var target_mid = (target_interval[0] + target_interval[1]) / 2;
             svg.appendChild(createNodeSvg(-link_mid, target_mid, r));
@@ -117,25 +132,14 @@ function pushNetSvg(svg, nodes) {
         }
       }
     }
-
-    // Draw Broad Interval as L-shape
-    if (node.broad_interval) {
-      svg.appendChild(
-          createBandSvg(node.broad_interval, node.type === 'link' ? '#555' : '#00d2ff')
-      );
-      svg.appendChild(
-          createBandSvg(node.interval, node.type === 'link' ? '#555' : '#00d2ff')
-      );
-
-      // Draw Label for Node
-      // Place at the corner of the L-shape or center of vertical span
-      if (node.type !== 'link') {
-        var t0 = node.interval[0];
-        var t1 = node.interval[1];
-        svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.type));
-      }
-    }
   }
+
+  // Render Pass
+  for (var i = 0; i < nodes.length; i++) {
+    renderNode(nodes[i]);
+  }
+  
+  return cursor;
 }
 
 function createDebugSvg(nodes) {
