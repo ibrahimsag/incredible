@@ -83,6 +83,12 @@ function countBlocks(onlySelected) {
 function processGraph() {
   $("#analysis").val();
   var proof = buildProof(graph);
+  window.lastProof = proof; // Store the last proof globally
+
+  if (window.updateDebugGraph) {
+    window.updateDebugGraph(proof);
+  }
+
   var timeBefore = performance.now();
   var analysis = incredibleLogic(current_logic(), proof);
   var timeAfter = performance.now();

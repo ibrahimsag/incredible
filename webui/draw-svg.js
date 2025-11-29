@@ -182,3 +182,49 @@ function createDebugSvg(nodes) {
 
   return svg;
 }
+
+function proofToNodes(proof) {
+  var nodes = [];
+  $.each(proof.blocks, function(id, block) {
+    var type = block.rule || block.assumption || block.conclusion || block.annotation || "unknown";
+    // If type is an object (e.g. assumption/conclusion/annotation might be string or formatted string), ensure string
+    if (typeof type !== 'string') {
+        type = JSON.stringify(type);
+    }
+    nodes.push({
+      id: id,
+      type: type,
+      before: [] // Ignore connections for now
+    });
+  });
+  return nodes;
+}
+
+function updateDebugGraph(proof) {
+  var overlay = $("#debug-overlay");
+  // if (overlay.length === 0) return; // Removed this check
+
+  var svg = overlay.find("svg").get(0);
+  if (!svg) return;
+
+  // Clear existing SVG content
+  while (svg.lastChild) {
+    svg.removeChild(svg.lastChild);
+  }
+
+  var nodes = proofToNodes(proof);
+  pushNetSvg(svg, nodes);
+
+  try {
+    var bbox = svg.getBBox();
+    var padding = 50;
+    var vbX = bbox.x - padding;
+    var vbY = bbox.y - padding;
+    var vbW = bbox.width + padding * 2;
+    var vbH = bbox.height + padding * 2;
+
+    svg.setAttribute('viewBox', vbX + " " + vbY + " " + vbW + " " + vbH);
+  } catch (e) {
+    console.warn('updateDebugGraph: Could not calculate BBox', e);
+  }
+}
