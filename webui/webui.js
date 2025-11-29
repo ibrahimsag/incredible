@@ -319,6 +319,20 @@ $(function (){
     }
   });
 
+  $("#show-graph").click(function() {
+    var overlay = $('<div id="debug-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; align-items:center; justify-content:center; overflow:auto;"></div>');
+    var svg = createDebugSvg(); // Uses buildDefaultGraph() by default
+    overlay.append(svg);
+    
+    var closeBtn = $('<button style="position:absolute; top:20px; right:20px; font-size:20px; padding:10px;">Close</button>');
+    closeBtn.click(function() {
+      overlay.remove();
+    });
+    overlay.append(closeBtn);
+
+    $('body').append(overlay);
+  });
+
   $("#closedialog").click(function(){
     $("#dialog").hide();
   });
