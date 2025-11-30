@@ -265,13 +265,73 @@ function getBlockPorts(block) {
   return { inputs: inputs, outputs: outputs };
 }
 
+function topologicalSortBlocks(proof) {
+  var inDegree = {};
+  var graph = {};
+  var allBlocks = Object.keys(proof.blocks);
+  
+  allBlocks.forEach(function(id) {
+    inDegree[id] = 0;
+    graph[id] = [];
+  });
+  
+  if (proof.connections) {
+    $.each(proof.connections, function(id, conn) {
+      var source = conn.from.block;
+      var target = conn.to.block;
+      if (graph[source] && graph[target]) {
+        graph[source].push(target);
+        inDegree[target]++;
+      }
+    });
+  }
+  
+  var queue = [];
+  allBlocks.forEach(function(id) {
+    if (inDegree[id] === 0) {
+      queue.push(id);
+    }
+  });
+  
+  queue.sort(); 
+  
+  var sorted = [];
+  while (queue.length > 0) {
+    var u = queue.shift();
+    sorted.push(u);
+    
+    if (graph[u]) {
+      graph[u].forEach(function(v) {
+        inDegree[v]--;
+        if (inDegree[v] === 0) {
+          queue.push(v);
+        }
+      });
+    }
+  }
+  
+  if (sorted.length < allBlocks.length) {
+    var visited = {};
+    sorted.forEach(function(id) { visited[id] = true; });
+    allBlocks.forEach(function(id) {
+      if (!visited[id]) sorted.push(id);
+    });
+  }
+  
+  return sorted;
+}
+
 function proofToNodes(proof) {
   var nodes = [];
   var blockToNodeMap = {};
   var nextId = 1;
 
-  // 1. Create Block Nodes and Output Port Nodes
-  $.each(proof.blocks, function(blockId, block) {
+  // Sort blocks topologically
+  var sortedBlockIds = topologicalSortBlocks(proof);
+
+  // 1. Create Block Nodes and Output Port Nodes in sorted order
+  sortedBlockIds.forEach(function(blockId) {
+    var block = proof.blocks[blockId];
     var type = block.rule || block.assumption || block.conclusion || block.annotation || "unknown";
     if (typeof type !== 'string') type = JSON.stringify(type);
     
