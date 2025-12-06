@@ -328,6 +328,99 @@ $(function (){
     debugOverlay.hide();
   });
   debugOverlay.append(closeBtn);
+
+  var sendBtn = $('<button style="position:absolute; top:20px; right:100px; font-size:20px; padding:10px; z-index:10000;">Send</button>');
+  sendBtn.click(function() {
+    // Get proof tree from draw-svg.js
+    var proof = buildProof(graph);
+    var treeNodes = proofToNodes(proof);
+
+    // Flatten nested tree to C/SDL format (stem/before/after/next pointers)
+    var flatNodes = [];
+    var nextId = 1;
+
+    function flattenNode(node, stemId) {
+      var myId = nextId++;
+      var flat = {
+        id: myId,
+        stem: stemId,
+        before: 0,
+        after: 0,
+        next: 0,
+        link: node.link || 0,
+        label: node.type || ''
+      };
+      flatNodes.push(flat);
+
+      // Process 'before' children
+      if (node.before && node.before.length > 0) {
+        flat.before = nextId;  // First child's id
+        for (var i = 0; i < node.before.length; i++) {
+          var childId = flattenNode(node.before[i], myId);
+          if (i < node.before.length - 1) {
+            flatNodes[childId - 1].next = nextId;  // Link to next sibling
+          }
+        }
+      }
+
+      // Process 'after' children
+      if (node.after && node.after.length > 0) {
+        flat.after = nextId;  // First child's id
+        for (var i = 0; i < node.after.length; i++) {
+          var childId = flattenNode(node.after[i], myId);
+          if (i < node.after.length - 1) {
+            flatNodes[childId - 1].next = nextId;  // Link to next sibling
+          }
+        }
+      }
+
+      return myId;
+    }
+
+    // Create synthetic root containing all top-level nodes
+    var rootNode = {
+      id: nextId++,
+      stem: 0,
+      before: 0,
+      after: treeNodes.length > 0 ? nextId : 0,
+      next: 0,
+      link: 0,
+      label: 'root'
+    };
+    flatNodes.push(rootNode);
+
+    // Add all top-level nodes as 'after' children of root
+    for (var i = 0; i < treeNodes.length; i++) {
+      var childId = flattenNode(treeNodes[i], 1);
+      if (i < treeNodes.length - 1) {
+        flatNodes[childId - 1].next = nextId;
+      }
+    }
+
+    var graphData = { nodes: flatNodes };
+
+    fetch('http://localhost:9988/graph', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(graphData)
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        sendBtn.text('Sent!');
+        setTimeout(function() { sendBtn.text('Send'); }, 1000);
+      } else {
+        sendBtn.text('Error');
+        setTimeout(function() { sendBtn.text('Send'); }, 1000);
+      }
+    })
+    .catch(function(err) {
+      sendBtn.text('Failed');
+      console.error('Send failed:', err);
+      setTimeout(function() { sendBtn.text('Send'); }, 1000);
+    });
+  });
+  debugOverlay.append(sendBtn);
   $('body').append(debugOverlay);
 
   $("#show-graph").click(function() {
@@ -335,6 +428,20 @@ $(function (){
     // When showing the overlay, ensure it's updated with current proof
     if (debugOverlay.is(":visible") && window.lastProof && window.updateDebugGraph) {
       window.updateDebugGraph(window.lastProof);
+    }
+  });
+
+  // Backtick key toggles debug overlay (keyCode 192)
+  $(document).on('keydown', function(e) {
+    // Ignore if typing in an input field
+    if ($(e.target).is('input, textarea, select')) return;
+
+    if (e.keyCode === 192 || e.key === '`' || e.key === 'Backquote') {
+      e.preventDefault();
+      debugOverlay.toggle();
+      if (debugOverlay.is(":visible") && window.lastProof && window.updateDebugGraph) {
+        window.updateDebugGraph(window.lastProof);
+      }
     }
   });
 
