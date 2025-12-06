@@ -338,16 +338,19 @@ $(function (){
     // Flatten nested tree to C/SDL format (stem/before/after/next pointers)
     var flatNodes = [];
     var nextId = 1;
+    var oldIdToNewId = {};  // Map original ids to flattened ids
 
     function flattenNode(node, stemId) {
       var myId = nextId++;
+      oldIdToNewId[node.id] = myId;  // Track id mapping
+
       var flat = {
         id: myId,
         stem: stemId,
         before: 0,
         after: 0,
         next: 0,
-        link: node.link || 0,
+        link: node.link || 0,  // Will be remapped later
         label: node.type || ''
       };
       flatNodes.push(flat);
@@ -396,6 +399,16 @@ $(function (){
         flatNodes[childId - 1].next = nextId;
       }
     }
+
+    // Remap link references from old ids to new ids
+    flatNodes.forEach(function(node) {
+      if (node.link && oldIdToNewId[node.link]) {
+        node.link = oldIdToNewId[node.link];
+      }
+    });
+
+    // Sort by id to ensure proper order for C/SDL import
+    flatNodes.sort(function(a, b) { return a.id - b.id; });
 
     var graphData = { nodes: flatNodes };
 
