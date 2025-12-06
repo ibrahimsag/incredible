@@ -321,20 +321,30 @@ function topologicalSortBlocks(proof) {
   return sorted;
 }
 
-function proofToNodes(proof) {
+function proofToNodes(proof, analysis) {
   var nodes = [];
   var blockToNodeMap = {};
   var nextId = 1;
+  analysis = analysis || {};
+  var portLabels = analysis.portLabels || {};
 
   // Sort blocks topologically
   var sortedBlockIds = topologicalSortBlocks(proof);
+
+  // Helper to get port label from analysis
+  function getPortLabel(blockId, portName) {
+    if (portLabels[blockId] && portLabels[blockId][portName]) {
+      return portLabels[blockId][portName];
+    }
+    return portName;
+  }
 
   // 1. Create Block Nodes and Output Port Nodes in sorted order
   sortedBlockIds.forEach(function(blockId) {
     var block = proof.blocks[blockId];
     var type = block.rule || block.assumption || block.conclusion || block.annotation || "unknown";
     if (typeof type !== 'string') type = JSON.stringify(type);
-    
+
     var blockNode = {
       id: nextId++,
       blockId: blockId,
@@ -346,14 +356,14 @@ function proofToNodes(proof) {
     };
     blockToNodeMap[blockId] = blockNode;
     nodes.push(blockNode);
-    
+
     var ports = getBlockPorts(block);
-    
+
     // Create explicit nodes for Output Ports
     $.each(ports.outputs, function(i, portName) {
         var outNode = {
             id: nextId++,
-            type: portName,
+            type: getPortLabel(blockId, portName),
             before: []
         };
         // Add to 'after' list
@@ -365,8 +375,8 @@ function proofToNodes(proof) {
     $.each(ports.inputs, function(i, portName) {
         var portNode = {
             id: nextId++,
-            type: portName,
-            before: [] 
+            type: getPortLabel(blockId, portName),
+            before: []
         };
         blockNode.before.push(portNode);
         blockNode.portNodes[portName] = portNode;
@@ -400,7 +410,7 @@ function proofToNodes(proof) {
   return nodes;
 }
 
-function updateDebugGraph(proof) {
+function updateDebugGraph(proof, analysis) {
   var overlay = $("#debug-overlay");
   // if (overlay.length === 0) return; // Removed this check
 
@@ -412,7 +422,7 @@ function updateDebugGraph(proof) {
     svg.removeChild(svg.lastChild);
   }
 
-  var nodes = proofToNodes(proof);
+  var nodes = proofToNodes(proof, analysis);
   pushNetSvg(svg, nodes);
 
   try {

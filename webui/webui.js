@@ -331,9 +331,10 @@ $(function (){
 
   var sendBtn = $('<button style="position:absolute; top:20px; right:100px; font-size:20px; padding:10px; z-index:10000;">Send</button>');
   sendBtn.click(function() {
-    // Get proof tree from draw-svg.js
+    // Get proof tree from draw-svg.js with analysis
     var proof = buildProof(graph);
-    var treeNodes = proofToNodes(proof);
+    var analysis = incredibleLogic(current_logic(), proof);
+    var treeNodes = proofToNodes(proof, analysis);
 
     // Flatten nested tree to C/SDL format (stem/before/after/next pointers)
     var flatNodes = [];
@@ -440,7 +441,7 @@ $(function (){
     debugOverlay.toggle();
     // When showing the overlay, ensure it's updated with current proof
     if (debugOverlay.is(":visible") && window.lastProof && window.updateDebugGraph) {
-      window.updateDebugGraph(window.lastProof);
+      window.updateDebugGraph(window.lastProof, window.lastAnalysis);
     }
   });
 
@@ -453,7 +454,7 @@ $(function (){
       e.preventDefault();
       debugOverlay.toggle();
       if (debugOverlay.is(":visible") && window.lastProof && window.updateDebugGraph) {
-        window.updateDebugGraph(window.lastProof);
+        window.updateDebugGraph(window.lastProof, window.lastAnalysis);
       }
     }
   });

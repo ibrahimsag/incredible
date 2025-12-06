@@ -85,13 +85,15 @@ function processGraph() {
   var proof = buildProof(graph);
   window.lastProof = proof; // Store the last proof globally
 
-  if (window.updateDebugGraph) {
-    window.updateDebugGraph(proof);
-  }
-
   var timeBefore = performance.now();
   var analysis = incredibleLogic(current_logic(), proof);
   var timeAfter = performance.now();
+
+  // Update debug graph with analysis
+  window.lastAnalysis = analysis;
+  if (window.updateDebugGraph) {
+    window.updateDebugGraph(proof, analysis);
+  }
 
   $("#took").text("processing took " + (timeAfter - timeBefore).toFixed(1) + "ms");
 
