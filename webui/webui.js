@@ -352,7 +352,7 @@ $(function (){
         after: 0,
         next: 0,
         link: node.link || 0,  // Will be remapped later
-        label: node.type || ''
+        label: node.label || ''
       };
       flatNodes.push(flat);
 

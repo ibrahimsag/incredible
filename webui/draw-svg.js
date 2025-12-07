@@ -137,20 +137,20 @@ function pushNetSvg(svg, nodes) {
     // Draw Node Body (L-shape)
     if (node.broad_interval) {
       svg.appendChild(
-        createBandSvg(node.broad_interval, node.type === 'link' ? '#555' : '#00d2ff')
+        createBandSvg(node.broad_interval, node.label === 'link' ? '#555' : '#00d2ff')
       );
-      
+
       if (node.interval) {
           svg.appendChild(
-            createBandSvg(node.interval, node.type === 'link' ? '#555' : '#00d2ff')
+            createBandSvg(node.interval, node.label === 'link' ? '#555' : '#00d2ff')
           );
       }
 
       // Draw Label
-      if (node.type !== 'link') {
+      if (node.label !== 'link') {
           var t0 = node.interval[0];
           var t1 = node.interval[1];
-          svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.type));
+          svg.appendChild(createLabelSvg(-t1 + 0.2, t0 + 0.2, node.label));
       }
     }
 
@@ -177,7 +177,7 @@ function pushNetSvg(svg, nodes) {
       var target_interval = pos_map[node.link];
       if (target_interval) {
         var target_mid = (target_interval[0] + target_interval[1]) / 2;
-        svg.appendChild(createLinkSvg([target_mid, link_mid], node.type === 'link' ? '#555' : '#00d2ff'));
+        svg.appendChild(createLinkSvg([target_mid, link_mid], node.label === 'link' ? '#555' : '#00d2ff'));
       }
     }
   }
@@ -339,16 +339,14 @@ function proofToNodes(proof, analysis) {
     return portName;
   }
 
-  // 1. Create Block Nodes and Output Port Nodes in sorted order
+  // 1. Create Block Nodes and Port Nodes in sorted order
   sortedBlockIds.forEach(function(blockId) {
     var block = proof.blocks[blockId];
-    var type = block.rule || block.assumption || block.conclusion || block.annotation || "unknown";
-    if (typeof type !== 'string') type = JSON.stringify(type);
 
     var blockNode = {
       id: nextId++,
       blockId: blockId,
-      type: type,
+      label: '',
       before: [],
       after: [],
       portNodes: {}, // Inputs
@@ -357,30 +355,55 @@ function proofToNodes(proof, analysis) {
     blockToNodeMap[blockId] = blockNode;
     nodes.push(blockNode);
 
-    var ports = getBlockPorts(block);
+    // Handle assumption/conclusion specially - proposition IS the port
+    if (block.assumption) {
+      blockNode.label = 'assumption';
+      var propNode = {
+        id: nextId++,
+        label: block.assumption,
+        before: []
+      };
+      blockNode.after.push(propNode);
+      blockNode.outPortNodes['out'] = propNode;  // for connection lookup
+    } else if (block.conclusion) {
+      blockNode.label = 'conclusion';
+      var propNode = {
+        id: nextId++,
+        label: block.conclusion,
+        before: []
+      };
+      blockNode.before.push(propNode);
+      blockNode.portNodes['in'] = propNode;  // for connection lookup
+    } else {
+      // Rules and annotations - use existing port logic
+      var label = block.rule || block.annotation || "unknown";
+      if (typeof label !== 'string') label = JSON.stringify(label);
+      blockNode.label = label;
 
-    // Create explicit nodes for Output Ports
-    $.each(ports.outputs, function(i, portName) {
-        var outNode = {
-            id: nextId++,
-            type: getPortLabel(blockId, portName),
-            before: []
-        };
-        // Add to 'after' list
-        blockNode.after.push(outNode);
-        blockNode.outPortNodes[portName] = outNode;
-    });
+      var ports = getBlockPorts(block);
 
-    // Create explicit nodes for Input Ports (inline in Block)
-    $.each(ports.inputs, function(i, portName) {
-        var portNode = {
-            id: nextId++,
-            type: getPortLabel(blockId, portName),
-            before: []
-        };
-        blockNode.before.push(portNode);
-        blockNode.portNodes[portName] = portNode;
-    });
+      // Create explicit nodes for Output Ports
+      $.each(ports.outputs, function(i, portName) {
+          var outNode = {
+              id: nextId++,
+              label: portName,
+              before: []
+          };
+          blockNode.after.push(outNode);
+          blockNode.outPortNodes[portName] = outNode;
+      });
+
+      // Create explicit nodes for Input Ports
+      $.each(ports.inputs, function(i, portName) {
+          var portNode = {
+              id: nextId++,
+              label: portName,
+              before: []
+          };
+          blockNode.before.push(portNode);
+          blockNode.portNodes[portName] = portNode;
+      });
+    }
   });
 
   // 2. Process connections
@@ -398,7 +421,7 @@ function proofToNodes(proof, analysis) {
 
           var linkNode = {
             id: nextId++,
-            type: 'link',
+            label: 'link',
             link: linkId,
             port: conn.to.port
           };
