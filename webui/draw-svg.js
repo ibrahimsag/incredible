@@ -339,72 +339,118 @@ function proofToNodes(proof, analysis) {
     return portName;
   }
 
-  // 1. Create Block Nodes and Port Nodes in sorted order
+  // Collect assumption and conclusion blocks
+  var assumptionBlocks = [];
+  var conclusionBlocks = [];
+  var otherBlockIds = [];
+
   sortedBlockIds.forEach(function(blockId) {
     var block = proof.blocks[blockId];
+    if (block.assumption) {
+      assumptionBlocks.push({ blockId: blockId, proposition: block.assumption });
+    } else if (block.conclusion) {
+      conclusionBlocks.push({ blockId: blockId, proposition: block.conclusion });
+    } else {
+      otherBlockIds.push(blockId);
+    }
+  });
+
+  // Create single "assumption" node with all propositions as children
+  if (assumptionBlocks.length > 0) {
+    var assumptionNode = {
+      id: nextId++,
+      label: 'assumption',
+      before: [],
+      after: [],
+      portNodes: {},
+      outPortNodes: {}
+    };
+    nodes.push(assumptionNode);
+
+    assumptionBlocks.forEach(function(ab) {
+      var propNode = {
+        id: nextId++,
+        label: ab.proposition,
+        before: []
+      };
+      assumptionNode.after.push(propNode);
+      // Map original blockId to this node for connection lookup
+      blockToNodeMap[ab.blockId] = {
+        outPortNodes: { 'out': propNode },
+        portNodes: {}
+      };
+    });
+  }
+
+  // Create nodes for rules and annotations
+  otherBlockIds.forEach(function(blockId) {
+    var block = proof.blocks[blockId];
+    var label = block.rule || block.annotation || "unknown";
+    if (typeof label !== 'string') label = JSON.stringify(label);
 
     var blockNode = {
       id: nextId++,
       blockId: blockId,
-      label: '',
+      label: label,
       before: [],
       after: [],
-      portNodes: {}, // Inputs
-      outPortNodes: {} // Outputs
+      portNodes: {},
+      outPortNodes: {}
     };
     blockToNodeMap[blockId] = blockNode;
     nodes.push(blockNode);
 
-    // Handle assumption/conclusion specially - proposition IS the port
-    if (block.assumption) {
-      blockNode.label = 'assumption';
-      var propNode = {
-        id: nextId++,
-        label: block.assumption,
-        before: []
-      };
-      blockNode.after.push(propNode);
-      blockNode.outPortNodes['out'] = propNode;  // for connection lookup
-    } else if (block.conclusion) {
-      blockNode.label = 'conclusion';
-      var propNode = {
-        id: nextId++,
-        label: block.conclusion,
-        before: []
-      };
-      blockNode.before.push(propNode);
-      blockNode.portNodes['in'] = propNode;  // for connection lookup
-    } else {
-      // Rules and annotations - use existing port logic
-      var label = block.rule || block.annotation || "unknown";
-      if (typeof label !== 'string') label = JSON.stringify(label);
-      blockNode.label = label;
+    var ports = getBlockPorts(block);
 
-      var ports = getBlockPorts(block);
+    // Create explicit nodes for Output Ports
+    $.each(ports.outputs, function(i, portName) {
+        var outNode = {
+            id: nextId++,
+            label: portName,
+            before: []
+        };
+        blockNode.after.push(outNode);
+        blockNode.outPortNodes[portName] = outNode;
+    });
 
-      // Create explicit nodes for Output Ports
-      $.each(ports.outputs, function(i, portName) {
-          var outNode = {
-              id: nextId++,
-              label: portName,
-              before: []
-          };
-          blockNode.after.push(outNode);
-          blockNode.outPortNodes[portName] = outNode;
-      });
-
-      // Create explicit nodes for Input Ports
-      $.each(ports.inputs, function(i, portName) {
-          var portNode = {
-              id: nextId++,
-              label: portName,
-              before: []
-          };
-          blockNode.before.push(portNode);
-          blockNode.portNodes[portName] = portNode;
-      });
-    }
+    // Create explicit nodes for Input Ports
+    $.each(ports.inputs, function(i, portName) {
+        var portNode = {
+            id: nextId++,
+            label: portName,
+            before: []
+        };
+        blockNode.before.push(portNode);
+        blockNode.portNodes[portName] = portNode;
+    });
   });
+
+  // Create single "conclusion" node at the end
+  if (conclusionBlocks.length > 0) {
+    var conclusionNode = {
+      id: nextId++,
+      label: 'conclusion',
+      before: [],
+      after: [],
+      portNodes: {},
+      outPortNodes: {}
+    };
+    nodes.push(conclusionNode);
+
+    conclusionBlocks.forEach(function(cb) {
+      var propNode = {
+        id: nextId++,
+        label: cb.proposition,
+        before: []
+      };
+      conclusionNode.before.push(propNode);
+      // Map original blockId to this node for connection lookup
+      blockToNodeMap[cb.blockId] = {
+        portNodes: { 'in': propNode },
+        outPortNodes: {}
+      };
+    });
+  }
 
   // 2. Process connections
   if (proof.connections) {
